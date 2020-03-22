@@ -1,6 +1,7 @@
-const http = require('http');
-const fs = require('fs');
-const filePath = 'file.txt'
+import http = require("http");
+import fs = require("fs");
+
+const filePath = 'file.txt';
 
 let server = http.createServer(((req, res) => {
     if (req.method == 'GET') {
