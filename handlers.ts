@@ -8,7 +8,7 @@ async function getUpdateTime() {
             if (err) {
                 return reject(err);
             }
-            resolve(stats.mtime.toLocaleString())
+            resolve(stats.mtime.toLocaleString());
         }
     ));
 }
@@ -34,7 +34,7 @@ function sendContent(req, res) {
     res.writeHead(200, {
         'Content-Type': 'text/plain'
     });
-    fs.readFile(filePath, 'utf8', ((err, data) => {
+    fs.readFile(filePath, ((err, data) => {
         if (err) {
             console.error(err);
             res.writeHead(500, {
@@ -42,7 +42,10 @@ function sendContent(req, res) {
             });
             res.end();
         } else {
-            res.write(data.toUpperCase());
+            // @ts-ignore
+            for (const value of data) {
+                res.write(String.fromCharCode(value).toUpperCase());
+            }
             res.end();
         }
     }));

@@ -1,4 +1,4 @@
-import {sendContent, sendUpdateTime, undefinedRequest} from './handlers'
+import {sendContent, sendUpdateTime, undefinedRequest} from './handlers';
 
 const routeHandlers = {
     "/content": sendContent,
