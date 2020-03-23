@@ -1,19 +1,20 @@
 import {sendContent, sendUpdateTime, undefinedRequest} from './handlers';
+import {IncomingMessage, ServerResponse} from 'http';
 
-const routeHandlers = {
-    "/content": sendContent,
-    "/updateTime": sendUpdateTime
+const routes : {[index: string]: (res: IncomingMessage, req: ServerResponse) => void} = {
+    '/content': sendContent,
+    '/updateTime': sendUpdateTime
 };
 
 
-function routeRequest(req, res) {
-    if (req.method == 'GET' && routeHandlers[req.url]) {
-        console.info("Got " + req.url + " request from: " + req.connection.remoteAddress);
-        routeHandlers[req.url](req, res);
+const routeRequest = (req: IncomingMessage, res: ServerResponse) => {
+    if (req.method === 'GET' && routes[req.url]) {
+        console.info('Got ' + req.url + ' request from: ' + req.connection.remoteAddress);
+        routes[req.url](req, res);
     } else {
         undefinedRequest(req, res);
-        console.warn("Got undefined request: " + req.url + " from: " + req.connection.remoteAddress);
+        console.warn('Got undefined request: ' + req.url + ' from: ' + req.connection.remoteAddress);
     }
-}
+};
 
 export {routeRequest};

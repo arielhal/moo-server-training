@@ -1,9 +1,10 @@
-import fs = require("fs");
+import fs = require('fs');
+import {IncomingMessage, ServerResponse} from 'http';
+import settings from './config.json';
+const filePath = settings.filePath;
 
-const filePath = "file.txt";
 
-
-async function getUpdateTime() {
+const getUpdateTime = () => {
     return new Promise((resolve, reject) => fs.stat(filePath, (err, stats) => {
             if (err) {
                 return reject(err);
@@ -11,14 +12,14 @@ async function getUpdateTime() {
             resolve(stats.mtime.toLocaleString());
         }
     ));
-}
+};
 
-async function sendUpdateTime(req, res) {
+const sendUpdateTime = async (req: IncomingMessage, res: ServerResponse) => {
     try {
         res.writeHead(200, {
             'Content-Type': 'text/plain'
         });
-        let time = await getUpdateTime();
+        const time = await getUpdateTime();
         res.write(time);
         res.end();
     } catch (err) {
@@ -26,11 +27,11 @@ async function sendUpdateTime(req, res) {
         res.writeHead(500, {
             'Content-Type': 'text/plain'
         });
-        res.end();
+        res.end('Internal Server Error!');
     }
-}
+};
 
-function sendContent(req, res) {
+const sendContent = (req: IncomingMessage, res: ServerResponse) => {
     res.writeHead(200, {
         'Content-Type': 'text/plain'
     });
@@ -40,7 +41,7 @@ function sendContent(req, res) {
             res.writeHead(500, {
                 'Content-Type': 'text/plain'
             });
-            res.end();
+            res.end('Internal Server Error!');
         } else {
             // @ts-ignore
             for (const value of data) {
@@ -49,13 +50,13 @@ function sendContent(req, res) {
             res.end();
         }
     }));
-}
+};
 
-function undefinedRequest(req, res) {
+const undefinedRequest = (req: IncomingMessage, res: ServerResponse) => {
     res.writeHead(404, {
         'Content-Type': 'text/plain'
     });
-    res.end();
-}
+    res.end('Not Found!');
+};
 
 export {sendContent, sendUpdateTime, undefinedRequest};
