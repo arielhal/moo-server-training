@@ -1,5 +1,6 @@
 import Koa = require('koa');
 import {router} from './router';
+import bodyParser = require('koa-bodyparser');
 import mongoose = require('mongoose');
 
 
@@ -12,6 +13,7 @@ db.once('open', () => console.log('Connected successfuly to DB, todo logs'));
 const app = new Koa();
 
 app
+    .use(bodyParser())
     .use(router.routes())
     .use(router.allowedMethods());
 

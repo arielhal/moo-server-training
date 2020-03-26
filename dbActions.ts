@@ -34,7 +34,7 @@ const createProduct = (productJson: object) => {
 
 const updateProduct = (id: string, newProductJson: object) => {
     return new Promise(((resolve, reject) => {
-        Product.findOneAndUpdate({_id: id}, newProductJson, ((err, doc) => {
+        Product.findOneAndUpdate({_id: id}, newProductJson, {new: true}, ((err, doc) => {
             if (err)
                 return reject(err);
             else if (doc == null)
@@ -44,4 +44,16 @@ const updateProduct = (id: string, newProductJson: object) => {
     }));
 };
 
-export {retrieveAllProducts, retrieveSpecificProduct, createProduct, updateProduct};
+const deleteProduct = (id: string) => {
+    return new Promise(((resolve, reject) => {
+        Product.findOneAndDelete({_id: id}, ((err, doc) => {
+            if (err)
+                return reject(err);
+            else if (doc == null)
+                return reject(notFound);
+            resolve(doc);
+        }));
+    }));
+};
+
+export {retrieveAllProducts, retrieveSpecificProduct, createProduct, updateProduct, deleteProduct};
