@@ -1,4 +1,5 @@
 import {Product} from './schema';
+import {notFound} from './errors';
 
 const retrieveAllProducts = () => {
     return new Promise((resolve, reject) => {
@@ -19,4 +20,28 @@ const retrieveSpecificProduct = (id: string) => {
         }));
     }));
 };
-export {retrieveAllProducts, retrieveSpecificProduct};
+
+const createProduct = (productJson: object) => {
+    const productToCreate = new Product(productJson);
+    return new Promise(((resolve, reject) => {
+        productToCreate.save(((err, product) => {
+            if (err)
+                return reject(err);
+            resolve(product);
+        }));
+    }));
+};
+
+const updateProduct = (id: string, newProductJson: object) => {
+    return new Promise(((resolve, reject) => {
+        Product.findOneAndUpdate({_id: id}, newProductJson, ((err, doc) => {
+            if (err)
+                return reject(err);
+            else if (doc == null)
+                return reject(notFound);
+            resolve(doc);
+        }));
+    }));
+};
+
+export {retrieveAllProducts, retrieveSpecificProduct, createProduct, updateProduct};
