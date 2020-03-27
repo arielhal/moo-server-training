@@ -10,7 +10,8 @@ const sendAllProductsRequest = async (ctx: ExtendableContext & IRouterParamConte
         ctx.body = await retrieveAllProducts();
     } catch (err) {
         ctx.status = 500;
-        ctx.body = 'Internal Server Error!'
+        ctx.body = 'Internal Server Error';
+        logger.warn(`Request from: ${ctx.request.ip} failed because of DB error`);
     }
 };
 
@@ -25,9 +26,9 @@ const sendSpecificProductRequest = async (ctx: ExtendableContext & IRouterParamC
             ctx.body = res;
         }
     } catch (err) {
-        console.log(err); // todo
         ctx.status = 500;
-        ctx.body = 'Internal Server Error!'
+        ctx.body = 'Internal Server Error';
+        logger.warn(`Request from: ${ctx.request.ip} failed because of DB error`);
     }
 };
 
@@ -36,11 +37,20 @@ const createProductRequest = async (ctx: ExtendableContext & DefaultContext & IR
     try {
         const value = await creationSchema.validateAsync(ctx.request.body);
         ctx.status = 201;
-        ctx.body = await createProduct(value);
+        const res = await createProduct(value);
+        ctx.body = res;
+        // @ts-ignore
+        logger.info(`New product created on DB by: ${ctx.request.ip}. Product ID: ${res._id}`)
 
     } catch (err) {
-        ctx.status = 400;
-        ctx.body = err;
+        if (err.name === 'MongoError') {
+            ctx.status = 500;
+            ctx.body = 'Internal Server Error';
+            logger.warn(`Request from: ${ctx.request.ip} failed because of DB error`);
+        } else {
+            ctx.status = 400;
+            ctx.body = err;
+        }
     }
 };
 
@@ -52,11 +62,20 @@ const updateProductRequest = async (ctx: ExtendableContext & DefaultContext & IR
         if (res == null) {
             ctx.body = 'Product Not Found!';
             ctx.status = 404;
-        } else
+        } else {
             ctx.body = res;
+            // @ts-ignore
+            logger.info(`Product ID: ${res._id} updated by: ${ctx.request.ip}`)
+        }
     } catch (err) {
-        ctx.status = 400;
-        ctx.body = err;
+        if (err.name === 'MongoError') {
+            ctx.status = 500;
+            ctx.body = 'Internal Server Error';
+            logger.warn(`Request from: ${ctx.request.ip} failed because of DB error`);
+        } else {
+            ctx.status = 400;
+            ctx.body = err;
+        }
     }
 };
 
@@ -67,12 +86,15 @@ const deleteProductRequest = async (ctx: ExtendableContext & DefaultContext & IR
         if (res == null) {
             ctx.body = 'Product Not Found!';
             ctx.status = 404;
-        } else
+        } else {
             ctx.body = res;
+            // @ts-ignore
+            logger.info(`Product ID: ${res._id} deleted by: ${ctx.request.ip}`)
+        }
     } catch (err) {
-
         ctx.status = 500;
         ctx.body = 'Internal Server Error!';
+        logger.warn(`Request from: ${ctx.request.ip} failed because of DB error`);
     }
 };
 
