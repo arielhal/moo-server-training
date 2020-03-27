@@ -1,0 +1,6 @@
+{
+  "port": 80,
+  "dbURI": "mongodb://localhost/test",
+  "reconnectTriesDB": 100,
+  "reconnectIntervalDB": 1000
+}

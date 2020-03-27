@@ -1,5 +1,4 @@
 import {Product} from './schema';
-import {notFound} from './errors';
 
 const retrieveAllProducts = () => {
     return new Promise((resolve, reject) => {
@@ -14,7 +13,7 @@ const retrieveAllProducts = () => {
 const retrieveSpecificProduct = (id: string) => {
     return new Promise(((resolve, reject) => {
         Product.findById(id, ((err, res) => {
-            if (err || res == null)
+            if (err)
                 return reject(err);
             resolve(res);
         }));
@@ -25,8 +24,9 @@ const createProduct = (productJson: object) => {
     const productToCreate = new Product(productJson);
     return new Promise(((resolve, reject) => {
         productToCreate.save(((err, product) => {
-            if (err)
+            if (err) {
                 return reject(err);
+            }
             resolve(product);
         }));
     }));
@@ -37,8 +37,6 @@ const updateProduct = (id: string, newProductJson: object) => {
         Product.findOneAndUpdate({_id: id}, newProductJson, {new: true}, ((err, doc) => {
             if (err)
                 return reject(err);
-            else if (doc == null)
-                return reject(notFound);
             resolve(doc);
         }));
     }));
@@ -49,8 +47,6 @@ const deleteProduct = (id: string) => {
         Product.findOneAndDelete({_id: id}, ((err, doc) => {
             if (err)
                 return reject(err);
-            else if (doc == null)
-                return reject(notFound);
             resolve(doc);
         }));
     }));
