@@ -43,4 +43,18 @@ const updateSchema = Joi.object({
     imageUrl: Joi.string()
 });
 
-export {creationSchema, updateSchema};
+const checkoutSchema = Joi.object({
+    buyList: Joi.array()
+        .items(Joi.object({
+            id: Joi.string()
+                .alphanum()
+                .required(),
+            quantity: Joi.number()
+                .integer()
+                .min(0)
+                .required()
+        }))
+        .required()
+});
+
+export {creationSchema, updateSchema, checkoutSchema};

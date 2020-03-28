@@ -9,7 +9,9 @@ const myFormat = printf(({level, message, timestamp}) => {
 
 const logger = createLogger({
     format: combine(
-        timestamp(),
+        timestamp({
+            format: 'DD-MM-YYYY HH:mm:ss',
+        }),
         myFormat
     ),
     transports: [new transports.Console(),

@@ -1,7 +1,14 @@
 import {DefaultContext, ExtendableContext} from 'koa';
-import {retrieveAllProducts, retrieveSpecificProduct, createProduct, updateProduct, deleteProduct} from './dbActions';
+import {
+    retrieveAllProducts,
+    retrieveSpecificProduct,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    checkout
+} from './dbActions';
 import {IRouterParamContext} from 'koa-router';
-import {creationSchema, updateSchema} from './request-schemas';
+import {creationSchema, updateSchema, checkoutSchema} from './request-schemas';
 import {logger} from './logger';
 
 const sendAllProductsRequest = async (ctx: ExtendableContext & IRouterParamContext) => {
@@ -98,10 +105,29 @@ const deleteProductRequest = async (ctx: ExtendableContext & DefaultContext & IR
     }
 };
 
+const checkoutRequest = async (ctx: ExtendableContext & DefaultContext & IRouterParamContext) => {
+    logger.info(`Got POST - checkout request from ${ctx.request.ip}`);
+    try {
+        const value = await checkoutSchema.validateAsync(ctx.request.body);
+        const res = await checkout(value.buyList);
+        ctx.body = {success: res};
+    } catch (err) {
+        if (err.name === 'MongoError') {
+            ctx.status = 500;
+            ctx.body = 'Internal Server Error';
+            logger.warn(`Request from: ${ctx.request.ip} failed because of DB error`);
+        } else {
+            ctx.status = 400;
+            ctx.body = {errors: err};
+        }
+    }
+};
+
 export {
     sendAllProductsRequest,
     sendSpecificProductRequest,
     createProductRequest,
     updateProductRequest,
-    deleteProductRequest
+    deleteProductRequest,
+    checkoutRequest
 };

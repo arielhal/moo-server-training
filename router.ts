@@ -7,7 +7,8 @@ import {
     sendSpecificProductRequest,
     createProductRequest,
     updateProductRequest,
-    deleteProductRequest
+    deleteProductRequest,
+    checkoutRequest
 } from './requests-handler';
 
 router.get('/products', sendAllProductsRequest);
@@ -15,6 +16,6 @@ router.get('/products/:id', sendSpecificProductRequest);
 router.post('/products', createProductRequest);
 router.put('/products/:id', updateProductRequest);
 router.delete('/products/:id', deleteProductRequest);
-
+router.post('/checkout', checkoutRequest);
 
 export {router};
