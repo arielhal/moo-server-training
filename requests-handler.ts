@@ -6,7 +6,7 @@ import {
     updateProduct,
     deleteProduct,
     checkout
-} from './dbActions';
+} from './db-actions';
 import {IRouterParamContext} from 'koa-router';
 import {creationSchema, updateSchema, checkoutSchema} from './request-schemas';
 import {logger} from './logger';
