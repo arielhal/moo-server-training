@@ -1,5 +1,4 @@
 import {createLogger, format, transports} from 'winston';
-import {Context} from 'koa';
 
 const {combine, timestamp, printf} = format;
 
@@ -19,12 +18,3 @@ export const logger = createLogger({
         new transports.File({filename: 'error.log', level: 'error'}),
         new transports.File({filename: 'combined.log'})]
 });
-
-export const loggerMiddleware = async (ctx: Context, next: () => Promise<any>) => {
-    logger.info(`got ${ctx.request.method}: ${ctx.request.path} request from ${ctx.request.ip}`);
-    try {
-        await next();
-    } catch (err) {
-        logger.error(`Client: ${ctx.request.ip}, status: ${err.status}, message: ${err.message}`);
-    }
-};

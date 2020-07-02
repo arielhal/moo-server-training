@@ -7,23 +7,18 @@ import {
     deleteProduct,
     checkout
 } from '../actions/product-db-actions';
-import {creationSchema, updateSchema, checkoutSchema} from '../schemas/product-request-schemas';
-import {logger} from '../middlewares/logger';
+import {creationSchema, updateSchema, checkoutSchema} from '../validation-schemas/product-request-schemas';
+import {logger} from '../logger/logger';
 
 export const getAllProductsRequest = async (ctx: Context) => {
-    try {
-        ctx.body = await retrieveAllProducts(ctx);
-    } catch (err) {
-        throw(err);
-    }
+    ctx.body = await retrieveAllProducts();
 };
 
 export const getSpecificProductRequest = async (ctx: Context) => {
-    try {
-        ctx.body = await retrieveSpecificProduct(ctx.params.id, ctx);
-    } catch (err) {
-        throw(err);
-    }
+    const product = await retrieveSpecificProduct(ctx.params.id);
+    if (!product)
+        ctx.throw(404, 'Product not found!');
+    ctx.body = product;
 };
 
 export const createProductRequest = async (ctx: Context) => {
@@ -33,14 +28,10 @@ export const createProductRequest = async (ctx: Context) => {
     } catch (err) {
         ctx.throw(400, err);
     }
-    try {
-        const newProduct = await createProduct(validatedBody, ctx);
-        ctx.body = newProduct;
-        ctx.status = 201;
-        logger.info(`New product created on DB by: ${ctx.request.ip}. Product ID: ${newProduct.id}`);
-    } catch (err) {
-        throw(err);
-    }
+    const newProduct = await createProduct(validatedBody);
+    ctx.body = newProduct;
+    ctx.status = 201;
+    logger.info(`New product created on DB by: ${ctx.request.ip}. Product ID: ${newProduct.id}`);
 };
 
 
@@ -51,26 +42,20 @@ export const updateProductRequest = async (ctx: Context) => {
     } catch (err) {
         ctx.throw(400, err);
     }
-    try {
-        const modifiedProduct = await updateProduct(ctx.params.id, validatedBody, ctx);
-        ctx.body = modifiedProduct;
-        ctx.status = 200;
-        logger.info(`Product ID: ${modifiedProduct.id} updated by: ${ctx.request.ip}`);
-    } catch (err) {
-        throw(err);
-    }
+    const modifiedProduct = await updateProduct(ctx.params.id, validatedBody);
+    if (!modifiedProduct)
+        ctx.throw(404, 'Product not found!');
+    ctx.body = modifiedProduct;
+    logger.info(`Product ID: ${modifiedProduct.id} updated by: ${ctx.request.ip}`);
 };
 
 
 export const deleteProductRequest = async (ctx: Context) => {
-    try {
-        const deletedProduct = await deleteProduct(ctx.params.id, ctx);
-        ctx.body = deletedProduct;
-        ctx.status = 200;
-        logger.info(`Product ID: ${deletedProduct.id} deleted by: ${ctx.request.ip}`)
-    } catch (err) {
-        throw(err);
-    }
+    const deletedProduct = await deleteProduct(ctx.params.id);
+    if (!deletedProduct)
+        ctx.throw(404, 'Product not found!');
+    ctx.body = deletedProduct;
+    logger.info(`Product ID: ${deletedProduct.id} deleted by: ${ctx.request.ip}`)
 };
 
 export const checkoutRequest = async (ctx: Context) => {
@@ -80,10 +65,8 @@ export const checkoutRequest = async (ctx: Context) => {
     } catch (err) {
         ctx.throw(400, err);
     }
-    try {
-        const checkoutRes = await checkout(validatedBody.buyList, ctx);
-        ctx.body = {success: checkoutRes};
-    } catch (err) {
-        throw(err);
-    }
+    const checkoutRes = await checkout(validatedBody.buyList);
+    if (!checkoutRes.success)
+        ctx.throw(400, JSON.stringify(checkoutRes));
+    ctx.body = JSON.stringify(checkoutRes);
 };

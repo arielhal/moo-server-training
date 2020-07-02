@@ -1,6 +1,6 @@
 import {Schema} from 'mongoose';
 import mongoose = require('mongoose');
-import {ProductDocument} from '../types/product-document'
+import {ProductDocument} from './product-document'
 
 const productSchema = new Schema({
     name: {type: String, required: true},
