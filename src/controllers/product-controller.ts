@@ -6,9 +6,10 @@ import {
     updateProduct,
     deleteProduct,
     checkout
-} from '../actions/product-db-actions';
+} from '../actions/DAL/product-db-actions';
 import {creationSchema, updateSchema, checkoutSchema} from '../validation-schemas/product-request-schemas';
-import {logger} from '../logger/logger';
+import {logger} from '../utils/logger';
+import {CheckoutError} from '../classes/checkout-error';
 
 export const getAllProductsRequest = async (ctx: Context) => {
     ctx.body = await retrieveAllProducts();
@@ -16,8 +17,10 @@ export const getAllProductsRequest = async (ctx: Context) => {
 
 export const getSpecificProductRequest = async (ctx: Context) => {
     const product = await retrieveSpecificProduct(ctx.params.id);
-    if (!product)
+    if (!product) {
         ctx.throw(404, 'Product not found!');
+        return;
+    }
     ctx.body = product;
 };
 
@@ -27,6 +30,7 @@ export const createProductRequest = async (ctx: Context) => {
         validatedBody = await creationSchema.validateAsync(ctx.request.body);
     } catch (err) {
         ctx.throw(400, err);
+        return;
     }
     const newProduct = await createProduct(validatedBody);
     ctx.body = newProduct;
@@ -41,10 +45,14 @@ export const updateProductRequest = async (ctx: Context) => {
         validatedBody = await updateSchema.validateAsync(ctx.request.body);
     } catch (err) {
         ctx.throw(400, err);
+        return;
     }
     const modifiedProduct = await updateProduct(ctx.params.id, validatedBody);
-    if (!modifiedProduct)
+    if (!modifiedProduct) {
         ctx.throw(404, 'Product not found!');
+        return;
+    }
+
     ctx.body = modifiedProduct;
     logger.info(`Product ID: ${modifiedProduct.id} updated by: ${ctx.request.ip}`);
 };
@@ -52,8 +60,10 @@ export const updateProductRequest = async (ctx: Context) => {
 
 export const deleteProductRequest = async (ctx: Context) => {
     const deletedProduct = await deleteProduct(ctx.params.id);
-    if (!deletedProduct)
+    if (!deletedProduct) {
         ctx.throw(404, 'Product not found!');
+        return;
+    }
     ctx.body = deletedProduct;
     logger.info(`Product ID: ${deletedProduct.id} deleted by: ${ctx.request.ip}`)
 };
@@ -64,9 +74,15 @@ export const checkoutRequest = async (ctx: Context) => {
         validatedBody = await checkoutSchema.validateAsync(ctx.request.body);
     } catch (err) {
         ctx.throw(400, err);
+        return;
     }
-    const checkoutRes = await checkout(validatedBody.buyList);
-    if (!checkoutRes.success)
-        ctx.throw(400, JSON.stringify(checkoutRes));
-    ctx.body = JSON.stringify(checkoutRes);
+    try {
+        ctx.body = await checkout(validatedBody.buyList);
+    } catch (err) {
+        if (err instanceof CheckoutError) {
+            ctx.throw(400, err);
+            return;
+        } else
+            throw err;
+    }
 };

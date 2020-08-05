@@ -1,15 +1,14 @@
 import {createLogger, format, transports} from 'winston';
 
-const {combine, timestamp, printf} = format;
+const {combine, printf} = format;
 
-// tslint:disable-next-line:no-shadowed-variable
 const myFormat = printf(({level, message, timestamp}) => {
     return `${timestamp} ${level}: ${message}`;
 });
 
 export const logger = createLogger({
     format: combine(
-        timestamp({
+        format.timestamp({
             format: 'DD-MM-YYYY HH:mm:ss',
         }),
         myFormat

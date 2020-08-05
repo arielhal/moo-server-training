@@ -1,14 +1,16 @@
-import {logger} from '../logger/logger';
-import {config} from '../../configurations/configuration';
+import {logger} from '../../utils/logger';
+import {config} from '../../utils/configuration';
 import mongoose = require('mongoose');
 
 export const connectToDB = async () => {
     try {
         logger.info(config.get('dbURI'));
+        mongoose.set('useFindAndModify', false);
         await mongoose.connect(config.get('dbURI'), {
             useNewUrlParser: true,
             bufferCommands: false,
-            useUnifiedTopology: true
+            useUnifiedTopology: true,
+            replicaSet: 'rs'
         });
         logger.info('Connected successfully to DB!');
         const db = mongoose.connection;
