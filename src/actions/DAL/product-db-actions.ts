@@ -37,24 +37,27 @@ export const processOneProduct = async (id: string, quantity: number, session: C
         quantity: {$gte: quantity}
     }, {$inc: {'quantity': -quantity}}, {new: true}).session(session);
     if (!product) {
-        throw new CheckoutError(`Product ${id} not found or quantity not enough!`);
+        return {error: {id, message: 'Product not found or quantity not enough'}};
     } else
         return product;
 };
 
 
 export const checkout = async (buyList: [{ id: string, quantity: number }]) => {
-    let productsList: ProductDocument[];
+    let productsList: (ProductDocument | { error: { id: string, message: string } })[];
+    const errorList: { id: string, message: string }[] = [];
+    let success = true;
     const session = await mongoose.startSession();
-    session.startTransaction();
-    try {
+    await session.withTransaction(async () => {
         productsList = await Promise.all(buyList.map(productToBuy => processOneProduct(productToBuy.id, productToBuy.quantity, session)));
-        await session.commitTransaction();
-    } catch (err) {
-        await session.abortTransaction();
-        throw(err);
-    } finally {
-        session.endSession();
-    }
-    return {'success': true, 'products': productsList.map(product => product.toClient())};
+        productsList.forEach(element => {
+            if ('error' in element) {
+                errorList.push(element.error);
+                success = false;
+            }
+        });
+        if (!success)
+            throw new CheckoutError(errorList);
+    });
+    return {'success': true};
 };

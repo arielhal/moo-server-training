@@ -4,7 +4,6 @@ import {logger} from '../utils/logger';
 
 export const errorHandlerMiddleware = async (ctx: Context, next: () => Promise<any>) => {
     try {
-        logger.info(`got ${ctx.request.method}: ${ctx.request.path} request from ${ctx.request.ip}`);
         await next();
     } catch (err) {
         if (err.status)
