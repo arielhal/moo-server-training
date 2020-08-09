@@ -59,5 +59,6 @@ export const checkout = async (buyList: [{ id: string, quantity: number }]) => {
         if (!success)
             throw new CheckoutError(errorList);
     });
+    session.endSession();
     return {'success': true};
 };
