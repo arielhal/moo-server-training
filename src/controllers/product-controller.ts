@@ -7,9 +7,17 @@ import {
     deleteProduct,
     checkout
 } from '../actions/DAL/product-db-actions';
-import {creationSchema, updateSchema, checkoutSchema} from '../validation-schemas/product-request-schemas';
+import {
+    creationSchema,
+    updateSchema,
+    checkoutSchema,
+    addToCartSchema, removeFromCartSchema
+} from '../validation-schemas/product-request-schemas';
 import {logger} from '../utils/logger';
 import {CheckoutError} from '../classes/checkout-error';
+import {createReadStream} from 'fs';
+import {addToCart, removeFromCart} from '../actions/cart-manager';
+import {io} from '../app';
 
 export const getAllProductsRequest = async (ctx: Context) => {
     ctx.body = await retrieveAllProducts();
@@ -78,11 +86,58 @@ export const checkoutRequest = async (ctx: Context) => {
     }
     try {
         ctx.body = await checkout(validatedBody.buyList);
+        await Promise.all(validatedBody.buyList.map(async (item: { id: string, quantity: number }) => {
+            const newQuantity = await removeFromCart(ctx.request.ip, item.id);
+            io.emit('update', JSON.stringify({id: item.id, newQuantity}));
+        }));
     } catch (err) {
         if (err instanceof CheckoutError) {
             ctx.throw(400, err);
             return;
         } else
             throw err;
+    }
+};
+
+// Just for testing
+export const testWS = async (ctx: Context) => {
+    logger.info('hello');
+    ctx.type = 'html';
+    ctx.body = createReadStream('index.html');
+};
+
+export const addToCartRequest = async (ctx: Context) => {
+    let validatedBody;
+    try {
+        validatedBody = await addToCartSchema.validateAsync(ctx.request.body);
+    } catch (err) {
+        ctx.throw(400, err);
+        return;
+    }
+    try {
+        const newQuantity = await addToCart(ctx.request.ip, validatedBody.id, validatedBody.quantity);
+        io.emit('update', JSON.stringify({id: validatedBody.id, newQuantity}));
+        ctx.body = {success: true};
+    } catch (err) {
+        ctx.throw(400, err);
+        return;
+    }
+};
+
+export const removeFromCartRequest = async (ctx: Context) => {
+    let validatedBody;
+    try {
+        validatedBody = await removeFromCartSchema.validateAsync(ctx.request.body);
+    } catch (err) {
+        ctx.throw(400, err);
+        return;
+    }
+    try {
+        const newQuantity = await removeFromCart(ctx.request.ip, validatedBody.id);
+        io.emit('update', JSON.stringify({id: validatedBody.id, newQuantity}));
+        ctx.body = {success: true};
+    } catch (err) {
+        ctx.throw(400, err);
+        return;
     }
 };

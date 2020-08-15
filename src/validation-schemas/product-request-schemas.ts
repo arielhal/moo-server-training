@@ -56,3 +56,19 @@ export const checkoutSchema = Joi.object({
         .required()
 });
 
+export const addToCartSchema = Joi.object({
+    id: Joi.string()
+        .alphanum()
+        .required(),
+    quantity: Joi.number()
+        .integer()
+        .min(0)
+        .required()
+});
+
+export const removeFromCartSchema = Joi.object({
+    id: Joi.string()
+        .alphanum()
+        .required()
+});
+

@@ -5,7 +5,7 @@ import {
     createProductRequest,
     updateProductRequest,
     deleteProductRequest,
-    checkoutRequest
+    checkoutRequest, testWS, addToCartRequest, removeFromCartRequest
 } from '../controllers/product-controller';
 
 export const productsRouter = new Router();
@@ -17,3 +17,6 @@ productsRouter.post('/products', createProductRequest);
 productsRouter.put('/products/:id', updateProductRequest);
 productsRouter.delete('/products/:id', deleteProductRequest);
 productsRouter.post('/checkout', checkoutRequest);
+productsRouter.get('/testWS', testWS); // Just for testing
+productsRouter.post('/addToCart', addToCartRequest);
+productsRouter.post('/removeFromCart', removeFromCartRequest);
