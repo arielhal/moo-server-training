@@ -1,0 +1,4 @@
+{
+  "port": 80,
+  "dbURI": "mongodb://DESKTOP-0JSKUFU:27017,DESKTOP-0JSKUFU:27018,DESKTOP-0JSKUFU:27019/test"
+}
