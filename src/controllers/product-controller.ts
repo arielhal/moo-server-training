@@ -78,13 +78,6 @@ export const deleteProductRequest = async (ctx: Context) => {
 };
 
 export const checkoutRequest = async (ctx: Context) => {
-    // let validatedBody;
-    // try {
-    //     validatedBody = await checkoutSchema.validateAsync(ctx.request.body);
-    // } catch (err) {
-    //     ctx.throw(400, err);
-    //     return;
-    // }
     if (!ctx.cookies.get('io') || !isUserExist(ctx.cookies.get('io'))) {
         ctx.throw(401, 'Not Authorized');
         return;
