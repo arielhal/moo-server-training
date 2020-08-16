@@ -43,7 +43,7 @@ export const processOneProduct = async (id: string, quantity: number, session: C
 };
 
 
-export const checkout = async (buyList: [{ id: string, quantity: number }]) => {
+export const checkout = async (buyList: { id: string, quantity: number }[]) => {
     let productsList: (ProductDocument | { error: { id: string, message: string } })[];
     const errorList: { id: string, message: string }[] = [];
     let success = true;

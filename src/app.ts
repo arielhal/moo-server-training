@@ -7,6 +7,8 @@ import socket = require('socket.io');
 
 import http = require('http');
 import {logger} from './utils/logger';
+import {addNewUser} from './actions/users-manager';
+import {removeUserFromAllItems} from './actions/cart-manager';
 
 export const app = new Koa();
 
@@ -22,7 +24,10 @@ export const io = new socket(server);
 
 io.on('connection', (sock) => {
     logger.info('a user connected');
-    sock.on('disconnect', () => {
+    addNewUser(sock.id, sock);
+    sock.on('disconnect', async () => {
         logger.info('user disconnected');
+        const newQuantitiesList = await removeUserFromAllItems(sock.id);
+        newQuantitiesList.forEach(item => io.emit('update', JSON.stringify(item)));
     });
 });

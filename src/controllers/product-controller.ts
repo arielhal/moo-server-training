@@ -10,17 +10,18 @@ import {
 import {
     creationSchema,
     updateSchema,
-    checkoutSchema,
     addToCartSchema, removeFromCartSchema
 } from '../validation-schemas/product-request-schemas';
 import {logger} from '../utils/logger';
 import {CheckoutError} from '../classes/checkout-error';
 import {createReadStream} from 'fs';
-import {addToCart, removeFromCart} from '../actions/cart-manager';
+import {addToCart, buildBuyListForUser, removeFromCart} from '../actions/cart-manager';
 import {io} from '../app';
+import {getUserSocket, isUserExist} from '../actions/users-manager';
 
 export const getAllProductsRequest = async (ctx: Context) => {
     ctx.body = await retrieveAllProducts();
+    logger.info(ctx.cookies.get('io'));
 };
 
 export const getSpecificProductRequest = async (ctx: Context) => {
@@ -77,18 +78,22 @@ export const deleteProductRequest = async (ctx: Context) => {
 };
 
 export const checkoutRequest = async (ctx: Context) => {
-    let validatedBody;
-    try {
-        validatedBody = await checkoutSchema.validateAsync(ctx.request.body);
-    } catch (err) {
-        ctx.throw(400, err);
+    // let validatedBody;
+    // try {
+    //     validatedBody = await checkoutSchema.validateAsync(ctx.request.body);
+    // } catch (err) {
+    //     ctx.throw(400, err);
+    //     return;
+    // }
+    if (!ctx.cookies.get('io') || !isUserExist(ctx.cookies.get('io'))) {
+        ctx.throw(401, 'Not Authorized');
         return;
     }
+    const buyList = buildBuyListForUser(ctx.cookies.get('io'));
     try {
-        ctx.body = await checkout(validatedBody.buyList);
-        await Promise.all(validatedBody.buyList.map(async (item: { id: string, quantity: number }) => {
-            const newQuantity = await removeFromCart(ctx.request.ip, item.id);
-            io.emit('update', JSON.stringify({id: item.id, newQuantity}));
+        ctx.body = await checkout(buyList);
+        await Promise.all(buyList.map(async (item: { id: string, quantity: number }) => {
+            await removeFromCart(ctx.cookies.get('io'), item.id);
         }));
     } catch (err) {
         if (err instanceof CheckoutError) {
@@ -108,6 +113,10 @@ export const testWS = async (ctx: Context) => {
 
 export const addToCartRequest = async (ctx: Context) => {
     let validatedBody;
+    if (!ctx.cookies.get('io') || !isUserExist(ctx.cookies.get('io'))) {
+        ctx.throw(401, 'Not Authorized');
+        return;
+    }
     try {
         validatedBody = await addToCartSchema.validateAsync(ctx.request.body);
     } catch (err) {
@@ -115,8 +124,9 @@ export const addToCartRequest = async (ctx: Context) => {
         return;
     }
     try {
-        const newQuantity = await addToCart(ctx.request.ip, validatedBody.id, validatedBody.quantity);
-        io.emit('update', JSON.stringify({id: validatedBody.id, newQuantity}));
+        const newQuantity = await addToCart(ctx.cookies.get('io'), validatedBody.id, validatedBody.quantity);
+        const socket = getUserSocket(ctx.cookies.get('io'));
+        socket.broadcast.emit('update', JSON.stringify({id: validatedBody.id, newQuantity}));
         ctx.body = {success: true};
     } catch (err) {
         ctx.throw(400, err);
@@ -126,6 +136,10 @@ export const addToCartRequest = async (ctx: Context) => {
 
 export const removeFromCartRequest = async (ctx: Context) => {
     let validatedBody;
+    if (!ctx.cookies.get('io') || !isUserExist(ctx.cookies.get('io'))) {
+        ctx.throw(401, 'Not Authorized');
+        return;
+    }
     try {
         validatedBody = await removeFromCartSchema.validateAsync(ctx.request.body);
     } catch (err) {
@@ -133,8 +147,9 @@ export const removeFromCartRequest = async (ctx: Context) => {
         return;
     }
     try {
-        const newQuantity = await removeFromCart(ctx.request.ip, validatedBody.id);
-        io.emit('update', JSON.stringify({id: validatedBody.id, newQuantity}));
+        const newQuantity = await removeFromCart(ctx.cookies.get('io'), validatedBody.id);
+        const socket = getUserSocket(ctx.cookies.get('io'));
+        socket.broadcast.emit('update', JSON.stringify({id: validatedBody.id, newQuantity}));
         ctx.body = {success: true};
     } catch (err) {
         ctx.throw(400, err);
