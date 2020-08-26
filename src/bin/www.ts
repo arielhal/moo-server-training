@@ -1,7 +1,6 @@
-import {app} from '../app';
+import {server} from '../app';
 import {config} from '../utils/configuration';
 import {connectToDB} from '../actions/DAL/db-connector';
+import {initiateSocketEvents} from '../sockets/socket-logic';
 
-
-connectToDB().then(() =>
-    app.listen(config.get('port')));
+connectToDB().then(() => server.listen(config.get('port'))).then(() => initiateSocketEvents());

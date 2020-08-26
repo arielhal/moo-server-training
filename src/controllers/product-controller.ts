@@ -7,12 +7,20 @@ import {
     deleteProduct,
     checkout
 } from '../actions/DAL/product-db-actions';
-import {creationSchema, updateSchema, checkoutSchema} from '../validation-schemas/product-request-schemas';
+import {
+    creationSchema,
+    updateSchema,
+    cartActionSchema,
+} from '../validation-schemas/product-request-schemas';
 import {logger} from '../utils/logger';
 import {CheckoutError} from '../classes/checkout-error';
+import {addToCart, buildBuyListForUser, removeFromCart} from '../actions/cart-manager';
+import {io} from '../sockets/socket-logic';
+import {getUserSocket, isUserExist} from '../actions/users-manager';
 
 export const getAllProductsRequest = async (ctx: Context) => {
     ctx.body = await retrieveAllProducts();
+    logger.info(ctx.cookies.get('io'));
 };
 
 export const getSpecificProductRequest = async (ctx: Context) => {
@@ -69,20 +77,67 @@ export const deleteProductRequest = async (ctx: Context) => {
 };
 
 export const checkoutRequest = async (ctx: Context) => {
-    let validatedBody;
+    if (!ctx.cookies.get('io') || !isUserExist(ctx.cookies.get('io'))) {
+        ctx.throw(401, 'Not Authorized');
+        return;
+    }
+    const buyList = buildBuyListForUser(ctx.cookies.get('io'));
     try {
-        validatedBody = await checkoutSchema.validateAsync(ctx.request.body);
+        ctx.body = await checkout(buyList);
+        await Promise.all(buyList.map(async (item: { id: string, quantity: number }) => {
+            await removeFromCart(ctx.cookies.get('io'), item.id, item.quantity);
+        }));
+    } catch (err) {
+        if (err instanceof CheckoutError) {
+            ctx.throw(400, {success: false, errors: err});
+            return;
+        } else
+            throw err;
+    }
+};
+
+export const addToCartRequest = async (ctx: Context) => {
+    let validatedBody;
+    if (!ctx.cookies.get('io') || !isUserExist(ctx.cookies.get('io'))) {
+        ctx.throw(401, 'Not Authorized');
+        return;
+    }
+    try {
+        validatedBody = await cartActionSchema.validateAsync(ctx.request.body);
     } catch (err) {
         ctx.throw(400, err);
         return;
     }
     try {
-        ctx.body = await checkout(validatedBody.buyList);
+        const newQuantity = await addToCart(ctx.cookies.get('io'), validatedBody.id, validatedBody.quantity);
+        const socket = getUserSocket(ctx.cookies.get('io'));
+        socket.broadcast.emit('update', JSON.stringify({id: validatedBody.id, newQuantity}));
+        ctx.body = {success: true};
     } catch (err) {
-        if (err instanceof CheckoutError) {
-            ctx.throw(400, err);
-            return;
-        } else
-            throw err;
+        ctx.throw(400, err);
+        return;
+    }
+};
+
+export const removeFromCartRequest = async (ctx: Context) => {
+    let validatedBody;
+    if (!ctx.cookies.get('io') || !isUserExist(ctx.cookies.get('io'))) {
+        ctx.throw(401, 'Not Authorized');
+        return;
+    }
+    try {
+        validatedBody = await cartActionSchema.validateAsync(ctx.request.body);
+    } catch (err) {
+        ctx.throw(400, err);
+        return;
+    }
+    try {
+        const newQuantity = await removeFromCart(ctx.cookies.get('io'), validatedBody.id, validatedBody.quantity);
+        const socket = getUserSocket(ctx.cookies.get('io'));
+        socket.broadcast.emit('update', JSON.stringify({id: validatedBody.id, newQuantity}));
+        ctx.body = {success: true};
+    } catch (err) {
+        ctx.throw(400, err);
+        return;
     }
 };
