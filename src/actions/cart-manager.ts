@@ -3,34 +3,41 @@ import {retrieveSpecificProduct} from './DAL/product-db-actions';
 
 export const mainCart: Map<string, Map<string, number>> = new Map();
 
-export const addToCart = async (userId: string, productId: string, desiredQuantity: number) => {
+const retrieveProductFromDB = async (productId: string) => {
     const productInDB = await retrieveSpecificProduct(productId);
     if (!productInDB) {
         throw new Error('Product not found!');
     }
+    return productInDB;
+};
+
+export const addToCart = async (userId: string, productId: string, desiredQuantity: number) => {
+    const productInDB = await retrieveProductFromDB(productId);
     if (!mainCart.has(productId)) {
         mainCart.set(productId, new Map());
-    }
-    if (mainCart.get(productId).has(userId)) {
-        throw new Error('Product already in user cart. Please remove first to add new quantity');
     }
     const availableQuantity = productInDB.quantity - getQuantityOfItemInMainCart(productId);
     if (availableQuantity < desiredQuantity) {
         throw new Error('Quantity not enough!');
     }
-    mainCart.get(productId).set(userId, desiredQuantity);
+    let currentQuantityInUserCart = 0;
+    if (mainCart.get(productId).has(userId)) {
+        currentQuantityInUserCart = mainCart.get(productId).get(userId);
+    }
+    mainCart.get(productId).set(userId, currentQuantityInUserCart + desiredQuantity);
     return availableQuantity - desiredQuantity;
 };
 
-export const removeFromCart = async (userId: string, productId: string) => {
-    const productInDB = await retrieveSpecificProduct(productId);
-    if (!productInDB) {
-        throw new Error('Product not found!');
-    }
+export const removeFromCart = async (userId: string, productId: string, quantityToRemove: number) => {
+    const productInDB = await retrieveProductFromDB(productId);
     if (!mainCart.has(productId) || !mainCart.get(productId).has(userId)) {
         throw new Error('Product not in user cart!');
     }
-    mainCart.get(productId).delete(userId);
+    if (quantityToRemove > mainCart.get(productId).get(userId)) {
+        throw new Error('Can not remove more quantity than what you have...');
+    }
+    const currentQuantityInUserCart = mainCart.get(productId).get(userId);
+    mainCart.get(productId).set(userId, currentQuantityInUserCart - quantityToRemove);
     return productInDB.quantity - getQuantityOfItemInMainCart(productId);
 };
 
@@ -54,7 +61,7 @@ const getQuantityOfItemInMainCart = (productId: string) => {
 export const cleanUserCart = async (userId: string) => {
     const userBuyList = buildBuyListForUser(userId);
     return await Promise.all(userBuyList.map(async (item) => {
-        const newQuantity = await removeFromCart(userId, item.id);
+        const newQuantity = await removeFromCart(userId, item.id, item.quantity);
         return {id: item.id, newQuantity};
     }));
 };
