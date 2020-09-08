@@ -11,9 +11,9 @@ import {Context} from 'koa';
 
 export const resolvers = {
     Query: {
-        getAllProducts: (parent: any, _args: any, context: { ctx: Context }) => getAllProductsRequest(context),
+        getAllProducts: (_parent: any, _args: any, context: { ctx: Context }) => getAllProductsRequest(context),
         getSpecificProduct: (_parent: any, args: { id: string }) => getSpecificProductRequest(args.id),
-        getUserCart: (parent: any, _args: any, context: { ctx: Context }) => getUserCartRequest(context)
+        getUserCart: (_parent: any, _args: any, context: { ctx: Context }) => getUserCartRequest(context)
     },
     Mutation: {
         createProduct: (_parent: any, args: { product: ProductType }, context: { ctx: Context }) => createProductRequest(args, context),
