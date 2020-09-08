@@ -1,7 +1,8 @@
 import {Document} from 'mongoose';
 
-type ProductType = {
+export type ProductType = {
     id?: any,
+    name: string,
     description: string,
     price: number,
     quantity: number,

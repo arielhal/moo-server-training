@@ -56,3 +56,12 @@ export const checkoutSchema = Joi.object({
         .required()
 });
 
+export const cartActionSchema = Joi.object({
+    id: Joi.string()
+        .alphanum()
+        .required(),
+    quantity: Joi.number()
+        .integer()
+        .min(0)
+        .required()
+});
